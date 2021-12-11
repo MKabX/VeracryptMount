@@ -1,17 +1,38 @@
+from typing import List
 from fman import show_alert, OK, show_prompt, PLATFORM
-from subprocess import Popen
+from subprocess import Popen, check_output
 from .settings import Settings
+import re
 
 settings = Settings("Veracrypt")
 
 class VeracryptHelper:
-    def mountContainerNormalMode(self, file: str):
+    def mountContainer(self, file: str):
         args = []
         self._mount(file, args)
 
     def mountContainerTcMode(self, file: str):
         args = ['-tc']
         self._mount(file, args)
+
+    def getMounts(self) -> List:
+        veracrypt = self._get_veracrypt()
+        if(veracrypt):
+            result = check_output([veracrypt, '-t', '-l'], encoding='utf8')
+            result = result.splitlines()
+            for i in range(len(result)):
+                result[i] = result[i].rstrip("\n")
+                regexParse = re.findall(r"(?<= )(?<!['])([^']*?)(?!['])(?= )|(?<=['])(.*)(?=['])", result[i])
+                resultGroup = regexParse[0][0]
+                if not resultGroup:
+                    resultGroup = regexParse[0][1]
+                result[i] = resultGroup
+            return result
+
+    def dismount(self, file: str):
+        veracrypt = self._get_veracrypt()
+        if(veracrypt):
+            Popen([veracrypt, '-t', '-d', file])
 
     def dismountAll(self):
         veracrypt = self._get_veracrypt()
