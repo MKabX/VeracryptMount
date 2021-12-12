@@ -1,6 +1,6 @@
 from typing import List
 from fman import show_alert, OK, show_prompt, PLATFORM
-from subprocess import Popen, check_output
+from subprocess import Popen, check_output, CalledProcessError
 from .settings import Settings
 import re
 
@@ -18,7 +18,11 @@ class VeracryptHelper:
     def getMounts(self) -> List:
         veracrypt = self._get_veracrypt()
         if(veracrypt):
-            result = check_output([veracrypt, '-t', '-l'], encoding='utf8')
+            try:
+                result = check_output([veracrypt, '-t', '-l'], encoding='utf8')
+            except CalledProcessError as grepexc:
+                print("error code", grepexc.returncode, grepexc.output)
+                return []
             result = result.splitlines()
             for i in range(len(result)):
                 result[i] = result[i].rstrip("\n")
